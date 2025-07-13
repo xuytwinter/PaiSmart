@@ -47,6 +47,9 @@ function toggleHeader() {
     }
 }
 
+// 将函数暴露到全局作用域，以便HTML中的onclick可以访问
+window.toggleHeader = toggleHeader
+
 
 /** Dark and light theme */
 if (localStorage.getItem('color-mode') === 'dark' || (!('color-mode' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -69,6 +72,9 @@ function toggleMode() {
         }, 100)
     }
 }
+
+// 将函数暴露到全局作用域，以便HTML中的onclick可以访问
+window.toggleMode = toggleMode
 
 function updateToggleModeBtn() {
 
@@ -130,31 +136,7 @@ function closeNavDropdown(event) {
 }
 
 
-const videoBg = document.querySelector("#video-container-bg")
-const videoContainer = document.querySelector("#video-container")
 
-function openVideo() {
-    videoBg.classList.remove("tw-scale-0", "tw-opacity-0")
-    videoBg.classList.add("tw-scale-100", "tw-opacity-100")
-    videoContainer.classList.remove("tw-scale-0")
-    videoContainer.classList.add("tw-scale-100")
-
-    document.body.classList.add("modal-open")
-}
-
-function closeVideo() {
-    videoContainer.classList.add("tw-scale-0")
-    videoContainer.classList.remove("tw-scale-100")
-
-    setTimeout(() => {
-        videoBg.classList.remove("tw-scale-100", "tw-opacity-100")
-        videoBg.classList.add("tw-scale-0", "tw-opacity-0")
-    }, 400)
-
-
-    document.body.classList.remove("modal-open")
-
-}
 
 /**
  * Animations
