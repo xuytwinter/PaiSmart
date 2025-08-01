@@ -1,5 +1,7 @@
 派聪明（PaiSmart）是一个企业级的 AI 知识库管理系统，采用检索增强生成（RAG）技术，提供智能文档处理和检索能力。
 
+核心技术栈包括 ElasticSearch、Kafka、WebSocket、Spring Security、Docker、MySQL 和 Redis。
+
 它的目标是帮助企业和个人更高效地管理和利用知识库中的信息，支持多租户架构，允许用户通过自然语言查询知识库，并获得基于自身文档的 AI 生成响应。
 
 ![派聪明多模块架构](https://cdn.tobebetterjavaer.com/stutymore/README-20250730102133.png)
@@ -15,7 +17,7 @@
 
 + 框架 : Spring Boot 3.4.2 (Java 17)
 + 数据库 : MySQL 8.0
-+ ORM : MyBatis-Plus 3.5.4
++ ORM : Spring Data JPA
 + 缓存 : Redis
 + 搜索引擎 : Elasticsearch 8.10.0
 + 消息队列 : Apache Kafka
