@@ -246,6 +246,61 @@ pnpm install
 pnpm run dev
 ```
 
+## 环境变量与脚本
+
+项目根目录的 `.env` 用于保存本地运行和部署相关配置。该文件已在 `.gitignore` 中忽略，不会进入版本库；首次使用时可参考 `.env.example` 填写真实值。
+
+当前 `.env` 里主要包含两类配置：
+
+- 应用运行配置：如 MySQL、Redis、Kafka、MinIO、Elasticsearch、JWT、AI Provider 等
+- 前端部署配置：如 `DEPLOY_SERVER_HOST`、`DEPLOY_SERVER_USER`、`DEPLOY_SERVER_KEY`、`DEPLOY_TARGET_DIR`、`DEPLOY_HEALTHCHECK_URL`
+
+常用脚本如下。
+
+### `infra.sh`
+
+用于在本机启动、停止和查看基础依赖服务，目前支持 `minio`、`kafka`、`elasticsearch`。
+
+```bash
+# 启动全部基础服务
+./infra.sh start
+
+# 启动指定服务
+./infra.sh start minio kafka
+
+# 查看状态
+./infra.sh status
+
+# 查看某个服务日志
+./infra.sh logs elasticsearch
+
+# 输出本地访问地址
+./infra.sh urls
+```
+
+### `deploy-front.sh`
+
+用于构建前端、打 zip 包、上传到服务器，并在远端替换 `/home/www/PaiSmart-Front/dist`。脚本会自动读取根目录 `.env` 中的部署配置。
+
+```bash
+# 直接构建并部署前端
+./deploy-front.sh
+```
+
+部署脚本默认会执行这些步骤：
+
+- 进入 `frontend` 执行 `pnpm build`
+- 打包 `dist` 为 zip 文件并上传到服务器
+- 删除远端旧的 `dist` 目录并解压新包
+- 检查远端 `dist/index.html` 是否存在
+- 请求 `DEPLOY_HEALTHCHECK_URL` 做健康检查
+
+如果只想复用已有的前端构建产物，可以在执行时跳过构建：
+
+```bash
+DEPLOY_SKIP_BUILD=1 ./deploy-front.sh
+```
+
 ## 八、解锁派聪明源码+教程
 
 那这次为了避免盗版，这次的代码仓库采用的是邀请制，加入星球后，在星球第一个置顶帖【球友必看】中获取邀请链接，审核通过后即可查看。
