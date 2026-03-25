@@ -233,29 +233,43 @@ public class FileUpload {
 }
 ```
 
-## 前端启动
+## 环境变量与新的启动方式
+
+现在本地开发建议按“准备 `.env` -> 启基础服务 -> 启后端 -> 启前端”的顺序启动，不再需要把一堆环境变量手动 export 到终端。
+
+### 1. 准备项目根目录 `.env`
+
+项目根目录的 `.env` 用于保存后端本地运行和部署相关配置。首次使用时先复制模板：
 
 ```bash
-# 进入前端项目目录
-cd frontend
-
-# 安装依赖
-pnpm install
-
-# 启动项目
-pnpm run dev
+cp .env.example .env
 ```
 
-## 环境变量与脚本
+后端启动时会通过 `DotenvEnvironmentPostProcessor` 自动读取项目根目录 `.env`，所以无论是 IDE 直接运行 `SmartPaiApplication`，还是在项目根目录执行 `mvn spring-boot:run`，都会优先使用这里的配置。
 
-项目根目录的 `.env` 用于保存本地运行和部署相关配置。该文件已在 `.gitignore` 中忽略，不会进入版本库；首次使用时可参考 `.env.example` 填写真实值。
+`.env` 里当前主要有三类配置：
 
-当前 `.env` 里主要包含两类配置：
-
-- 应用运行配置：如 MySQL、Redis、Kafka、MinIO、Elasticsearch、JWT、AI Provider 等
+- 应用运行配置：MySQL、Redis、Kafka、MinIO、Elasticsearch、JWT、AI Provider 等
+- 初始化与安全配置：如 `ADMIN_BOOTSTRAP_*`、`APP_AUTH_REGISTRATION_MODE`、`SECURITY_ALLOWED_ORIGINS`
 - 前端部署配置：如 `DEPLOY_SERVER_HOST`、`DEPLOY_SERVER_USER`、`DEPLOY_SERVER_KEY`、`DEPLOY_TARGET_DIR`、`DEPLOY_HEALTHCHECK_URL`
 
-常用脚本如下。
+几个关键项建议优先确认：
+
+- `SPRING_PROFILES_ACTIVE=dev`：本地源码启动默认使用 `dev`
+- `SPRING_DATASOURCE_*`、`SPRING_DATA_REDIS_*`：数据库和 Redis 连接
+- `SPRING_KAFKA_BOOTSTRAP_SERVERS`、`MINIO_*`、`ELASTICSEARCH_*`：基础依赖地址
+- `JWT_SECRET_KEY`：必须是 Base64 字符串，可用 `openssl rand -base64 32` 生成
+- `ADMIN_BOOTSTRAP_ENABLED`：仅首次创建管理员时临时改为 `true`，创建完成后改回 `false`
+
+说明：
+
+- `.env` 是后端和部署脚本共用的根配置
+- 前端自己的 Vite 变量仍放在 `frontend/.env`、`frontend/.env.test`、`frontend/.env.prod`
+- `pnpm run dev` 实际使用的是 `vite --mode test`，默认会读取 `frontend/.env.test`
+
+### 2. 启动本地基础服务
+
+`infra.sh` 是现在推荐的本地基础设施启动入口，用来统一管理 `minio`、`kafka`、`elasticsearch`。
 
 ### `infra.sh`
 
@@ -278,9 +292,56 @@ pnpm run dev
 ./infra.sh urls
 ```
 
-### `deploy-front.sh`
+如果只想启动部分依赖，也可以按服务名传参：
 
-用于构建前端、打 zip 包、上传到服务器，并在远端替换 `/home/www/PaiSmart-Front/dist`。脚本会自动读取根目录 `.env` 中的部署配置。
+```bash
+./infra.sh start minio kafka
+```
+
+### 3. 启动后端
+
+基础服务就绪后，在项目根目录启动 Spring Boot：
+
+```bash
+mvn spring-boot:run
+```
+
+也可以直接在 IDE 中运行 `src/main/java/com/yizhaoqi/smartpai/SmartPaiApplication.java`，效果一样，都会自动读取根目录 `.env`。
+
+### 4. 启动前端
+
+```bash
+cd frontend
+pnpm install
+pnpm run dev
+```
+
+前端开发默认访问 `http://localhost:8081/api/v1`，对应配置在 `frontend/.env.test`。
+
+### 5. 服务器脚本启动
+
+如果是服务器上用 jar 包方式运行，可以参考根目录的 `launch.sh.example`。建议先复制成你自己的启动脚本，再按需调整 JDK、Maven 和 jar 名称。脚本支持先加载指定 `.env`，再执行 `start`、`restart`、`stop`、`status`、`logs` 等命令。
+
+```bash
+cp launch.sh.example launch.sh
+chmod +x launch.sh
+
+# 使用默认 .env 启动
+./launch.sh start
+
+# 使用指定环境文件启动
+./launch.sh start -e .env.prod
+```
+
+其中：
+
+- `start`：会先 `git pull`，再重新打包并启动
+- `restart`：直接重启现有 jar
+- `status` / `logs`：查看进程状态和日志
+
+### 6. 前端部署脚本
+
+`deploy-front.sh` 用于构建前端、打 zip 包、上传到服务器，并在远端替换 `/home/www/PaiSmart-Front/dist`。脚本会自动读取根目录 `.env` 中的部署配置。
 
 ```bash
 # 直接构建并部署前端
